@@ -334,7 +334,7 @@ class GrobidClient(ApiClient):
                     tei_coordinates,
                     segment_sentences
                 )
-        except requests.exceptions.ReadTimeout:
+        except Exception:
             pdf_handle.close()
             return (pdf_file, 408, None)
 
