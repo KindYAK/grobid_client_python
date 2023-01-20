@@ -260,7 +260,7 @@ class GrobidClient(ApiClient):
         retries_count = 0
         while res_text is None:
             if retries_count > self.config['pdf_retries']:
-                raise Exception("Too many retries!")
+                return (pdf_file, status, res_text)
             pdf_file, status, res_text = self.process_pdf_(
                 service,
                 pdf_file,
