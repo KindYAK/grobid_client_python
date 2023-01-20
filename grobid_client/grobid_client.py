@@ -38,13 +38,15 @@ class GrobidClient(ApiClient):
                  sleep_time=5,
                  timeout=60,
                  config_path=None, 
-                 check_server=True):
+                 check_server=True,
+                 pdf_retries=10):
         self.config = {
             'grobid_server': grobid_server,
             'batch_size': batch_size,
             'coordinates': coordinates,
             'sleep_time': sleep_time,
-            'timeout': timeout
+            'timeout': timeout,
+            'pdf_retries': pdf_retries,
         }
         if config_path:
             self._load_config(config_path)
@@ -234,6 +236,46 @@ class GrobidClient(ApiClient):
                    print("Writing resulting TEI XML file", filename, "failed")
 
     def process_pdf(
+            self,
+            service,
+            pdf_file,
+            generateIDs,
+            consolidate_header,
+            consolidate_citations,
+            include_raw_citations,
+            include_raw_affiliations,
+            tei_coordinates,
+            segment_sentences):
+        pdf_file, status, res_text = self.process_pdf_(
+            service,
+            pdf_file,
+            generateIDs,
+            consolidate_header,
+            consolidate_citations,
+            include_raw_citations,
+            include_raw_affiliations,
+            tei_coordinates,
+            segment_sentences
+        )
+        retries_count = 0
+        while res_text is None:
+            if retries_count > self.config['pdf_retries']:
+                raise Exception("Too many retries!")
+            pdf_file, status, res_text = self.process_pdf_(
+                service,
+                pdf_file,
+                generateIDs,
+                consolidate_header,
+                consolidate_citations,
+                include_raw_citations,
+                include_raw_affiliations,
+                tei_coordinates,
+                segment_sentences
+            )
+            retries_count += 1
+        return (pdf_file, status, res_text)
+
+    def process_pdf_(
         self,
         service,
         pdf_file,
